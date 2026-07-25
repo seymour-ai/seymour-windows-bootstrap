@@ -61,7 +61,9 @@ function Add-CommonToolPaths {
         "$env:ProgramFiles\Git\cmd",
         "$env:ProgramFiles\Git\bin",
         "$env:LOCALAPPDATA\Programs\Python\Python312",
-        "$env:LOCALAPPDATA\Programs\Python\Python312\Scripts"
+        "$env:LOCALAPPDATA\Programs\Python\Python312\Scripts",
+        "$env:LOCALAPPDATA\Programs\nodejs",
+        "$env:ProgramFiles\nodejs"
     )
 
     foreach ($path in $paths) {
@@ -141,6 +143,7 @@ if ($InstallTasks) {
 }
 
 Ensure-Command -Command "git" -PackageId "Git.Git" -DisplayName "Git for Windows"
+Ensure-Command -Command "npm" -PackageId "OpenJS.NodeJS.LTS" -DisplayName "Node.js LTS"
 if (!(Test-UsablePython)) {
     Install-WingetPackage -PackageId "Python.Python.3.12" -DisplayName "Python 3.12"
 }
