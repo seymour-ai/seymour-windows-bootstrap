@@ -17,6 +17,36 @@ function Test-Command {
     return $null -ne (Get-Command $Name -ErrorAction SilentlyContinue)
 }
 
+function Test-NativeCommand {
+    param(
+        [string]$Command,
+        [string[]]$Arguments
+    )
+
+    $output = & $Command @Arguments 2>&1
+    return $LASTEXITCODE -eq 0
+}
+
+function Test-UsablePython {
+    $candidates = @(
+        "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe",
+        "$env:ProgramFiles\Python312\python.exe",
+        "python"
+    )
+
+    foreach ($candidate in $candidates) {
+        if (((Test-Path $candidate) -or (Test-Command $candidate)) -and (Test-NativeCommand -Command $candidate -Arguments @("--version"))) {
+            return $true
+        }
+    }
+
+    if (Test-Command "py") {
+        return Test-NativeCommand -Command "py" -Arguments @("-3", "--version")
+    }
+
+    return $false
+}
+
 function Add-CommonToolPaths {
     $paths = @(
         "$env:LOCALAPPDATA\Programs\Git\cmd",
@@ -100,7 +130,12 @@ function Resolve-InstallRoot {
 Add-CommonToolPaths
 
 Ensure-Command -Command "git" -PackageId "Git.Git" -DisplayName "Git for Windows"
-Ensure-Command -Command "python" -PackageId "Python.Python.3.12" -DisplayName "Python 3.12"
+if (!(Test-UsablePython)) {
+    Install-WingetPackage -PackageId "Python.Python.3.12" -DisplayName "Python 3.12"
+}
+if (!(Test-UsablePython)) {
+    throw "Python 3.12 was installed, but no usable Python command is available. Restart PowerShell and rerun this script."
+}
 
 if ([string]::IsNullOrWhiteSpace($RepoPath)) {
     $RepoPath = Resolve-InstallRoot
@@ -145,6 +180,10 @@ if ($WriteState) {
 }
 
 powershell @Args
+$localTestExitCode = $LASTEXITCODE
+if ($localTestExitCode -ne 0) {
+    throw "Seymour Fleet Windows local test failed. Exit code: $localTestExitCode"
+}
 
 $Result = @{
     status = "ok"
