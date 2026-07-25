@@ -19,6 +19,8 @@ function Test-Command {
 
 function Add-CommonToolPaths {
     $paths = @(
+        "$env:LOCALAPPDATA\Programs\Git\cmd",
+        "$env:LOCALAPPDATA\Programs\Git\bin",
         "$env:ProgramFiles\Git\cmd",
         "$env:ProgramFiles\Git\bin",
         "$env:LOCALAPPDATA\Programs\Python\Python312",
@@ -46,7 +48,22 @@ function Install-WingetPackage {
         throw "$DisplayName is missing and winget is not available. Install App Installer from Microsoft Store or run on a supported Windows version."
     }
 
-    winget install --id $PackageId --exact --silent --accept-package-agreements --accept-source-agreements
+    $wingetArgs = @(
+        "install",
+        "--id",
+        $PackageId,
+        "--exact",
+        "--scope",
+        "user",
+        "--silent",
+        "--accept-package-agreements",
+        "--accept-source-agreements"
+    )
+    & winget @wingetArgs
+    $exitCode = $LASTEXITCODE
+    if ($exitCode -ne 0) {
+        throw "$DisplayName install failed or was cancelled. winget exit code: $exitCode"
+    }
     Add-CommonToolPaths
 }
 
