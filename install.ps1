@@ -6,6 +6,9 @@ param(
     [string]$TargetHost = $env:COMPUTERNAME,
     [string]$StateDir = "",
     [switch]$WriteState,
+    [switch]$InstallTasks,
+    [switch]$NoStart,
+    [switch]$NoHealthCheck,
     [switch]$NoInstall,
     [switch]$SkipRepoUpdate
 )
@@ -133,6 +136,10 @@ function Resolve-InstallRoot {
 
 Add-CommonToolPaths
 
+if ($InstallTasks) {
+    $WriteState = $true
+}
+
 Ensure-Command -Command "git" -PackageId "Git.Git" -DisplayName "Git for Windows"
 if (!(Test-UsablePython)) {
     Install-WingetPackage -PackageId "Python.Python.3.12" -DisplayName "Python 3.12"
@@ -183,6 +190,18 @@ if ($WriteState) {
     $Args += "-WriteState"
 }
 
+if ($InstallTasks) {
+    $Args += "-InstallTasks"
+}
+
+if ($NoStart) {
+    $Args += "-NoStart"
+}
+
+if ($NoHealthCheck) {
+    $Args += "-NoHealthCheck"
+}
+
 powershell @Args
 $localTestExitCode = $LASTEXITCODE
 if ($localTestExitCode -ne 0) {
@@ -194,6 +213,7 @@ $Result = @{
     repo_path = $RepoPath
     target_host = $TargetHost
     write_state = [bool]$WriteState
+    install_tasks = [bool]$InstallTasks
 }
 
 $Result | ConvertTo-Json -Depth 4
