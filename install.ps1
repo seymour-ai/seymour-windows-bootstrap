@@ -23,8 +23,13 @@ function Test-NativeCommand {
         [string[]]$Arguments
     )
 
-    $output = & $Command @Arguments 2>&1
-    return $LASTEXITCODE -eq 0
+    try {
+        & $Command @Arguments *> $null
+        return $LASTEXITCODE -eq 0
+    }
+    catch {
+        return $false
+    }
 }
 
 function Test-UsablePython {
