@@ -66,6 +66,15 @@ function Add-CommonToolPaths {
         "$env:ProgramFiles\nodejs"
     )
 
+    $wingetPackages = Join-Path $env:LOCALAPPDATA "Microsoft\WinGet\Packages"
+    if (Test-Path $wingetPackages) {
+        $nodePackageBins = Get-ChildItem -Path $wingetPackages -Filter "npm.cmd" -Recurse -ErrorAction SilentlyContinue |
+            Select-Object -ExpandProperty DirectoryName -Unique
+        foreach ($path in $nodePackageBins) {
+            $paths += $path
+        }
+    }
+
     foreach ($path in $paths) {
         if ((Test-Path $path) -and ($env:Path -notlike "*$path*")) {
             $env:Path = "$path;$env:Path"
