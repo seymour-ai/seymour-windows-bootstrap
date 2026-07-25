@@ -35,8 +35,7 @@ function Test-NativeCommand {
 function Test-UsablePython {
     $candidates = @(
         "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe",
-        "$env:ProgramFiles\Python312\python.exe",
-        "python"
+        "$env:ProgramFiles\Python312\python.exe"
     )
 
     foreach ($candidate in $candidates) {
