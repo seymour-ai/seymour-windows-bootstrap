@@ -68,9 +68,9 @@ function Add-CommonToolPaths {
 
     $wingetPackages = Join-Path $env:LOCALAPPDATA "Microsoft\WinGet\Packages"
     if (Test-Path $wingetPackages) {
-        $nodePackageBins = Get-ChildItem -Path $wingetPackages -Filter "npm.cmd" -Recurse -ErrorAction SilentlyContinue |
+        $nodePackageRoots = Get-ChildItem -Path $wingetPackages -Filter "node.exe" -Recurse -ErrorAction SilentlyContinue |
             Select-Object -ExpandProperty DirectoryName -Unique
-        foreach ($path in $nodePackageBins) {
+        foreach ($path in $nodePackageRoots) {
             $paths += $path
         }
     }
@@ -119,16 +119,18 @@ function Ensure-Command {
     param(
         [string]$Command,
         [string]$PackageId,
-        [string]$DisplayName
+        [string]$DisplayName,
+        [string[]]$TestArguments = @(),
+        [switch]$RequireUsable
     )
 
-    if (Test-Command $Command) {
+    if ((Test-Command $Command) -and (!$RequireUsable -or (Test-NativeCommand -Command $Command -Arguments $TestArguments))) {
         return
     }
 
     Install-WingetPackage -PackageId $PackageId -DisplayName $DisplayName
 
-    if (!(Test-Command $Command)) {
+    if (!(Test-Command $Command) -or ($RequireUsable -and !(Test-NativeCommand -Command $Command -Arguments $TestArguments))) {
         throw "$DisplayName was installed, but '$Command' is still not available on PATH. Restart PowerShell and rerun this script."
     }
 }
@@ -151,8 +153,8 @@ if ($InstallTasks) {
     $WriteState = $true
 }
 
-Ensure-Command -Command "git" -PackageId "Git.Git" -DisplayName "Git for Windows"
-Ensure-Command -Command "npm" -PackageId "OpenJS.NodeJS.LTS" -DisplayName "Node.js LTS"
+Ensure-Command -Command "git" -PackageId "Git.Git" -DisplayName "Git for Windows" -RequireUsable -TestArguments @("--version")
+Ensure-Command -Command "npm" -PackageId "OpenJS.NodeJS.LTS" -DisplayName "Node.js LTS" -RequireUsable -TestArguments @("--version")
 if (!(Test-UsablePython)) {
     Install-WingetPackage -PackageId "Python.Python.3.12" -DisplayName "Python 3.12"
 }
